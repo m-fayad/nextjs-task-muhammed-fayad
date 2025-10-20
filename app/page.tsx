@@ -1,6 +1,10 @@
 import dynamic from "next/dynamic";
-import MainSection from "@/components/layout/main-section";
 import AsideSection from "@/components/layout/aside-section";
+import { breadcrumbItems } from "@/lib/constants";
+import BreadCrumbComponent from "@/components/atoms/BreadCrumbComponent";
+import VideoPlayer from "@/components/molecules/VideoPlayer";
+import SectionalButtons from "@/components/molecules/SectionalButtons";
+import CourseMaterialsSection from "@/components/layout/course-material-section";
 
 const CommentsSections = dynamic(
   () => import("@/components/layout/comments-section")
@@ -8,8 +12,20 @@ const CommentsSections = dynamic(
 
 export default function Home() {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 min-h-screen p-8 pb-20 sm:p-20">
-      <MainSection />
+    <div className="grid grid-cols-1 grid-rows-[30px_70px_210px] md:grid-cols-[1.5fr_1fr] gap-y-4 gap-x-8 min-h-screen p-4 pb-20 sm:p-20">
+      <BreadCrumbComponent items={breadcrumbItems} />
+
+      <h1 className="text-2xl font-bold col-start-1">
+        Starting SEO as your Home Based Business
+      </h1>
+
+      <div className="sticky top-0 z-50 md:static md:col-start-1 md:col-span-1">
+        <VideoPlayer />
+      </div>
+
+      <SectionalButtons />
+      <CourseMaterialsSection />
+
       <AsideSection />
       <CommentsSections />
     </div>
