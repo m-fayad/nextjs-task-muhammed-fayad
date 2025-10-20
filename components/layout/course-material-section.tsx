@@ -2,7 +2,7 @@ import { Book, BookUser, Clock, Globe, User } from "lucide-react";
 
 const CourseMaterialsSection = () => {
   return (
-    <section className="col-start-1">
+    <section className="mt-4 col-start-1">
       <h2 className="text-lg font-bold mb-4 capitalize">Course Materials</h2>
 
       <div className="grid md:grid-cols-2 grid-rows-3 gap-y-2 gap-x-16 md:justify-between divide-y-2 divide-gray-200">
