@@ -1,9 +1,11 @@
+// TODO: في الدسكتوب عند الضغط على Wide يخلي البلاير بعرض الشاشة وينزل محتوى الكورس للأسفل
+
 const VideoPlayer = () => {
   return (
     <div className="relative w-full h-0 pb-[300px]">
       <iframe
         className="absolute top-0 -left-4 w-screen md:left-0 md:w-full h-full"
-        src="https://www.youtube.com/embed/dQw4w9WgXcQ"
+        src="https://www.youtube.com/embed/9QdNL4GGD7E?si=OVgjXsUdE3Rfd7rd"
         title="YouTube video player"
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
         allowFullScreen
