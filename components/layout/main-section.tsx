@@ -1,30 +1,16 @@
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
+import { breadcrumbItems } from "@/lib/constants";
+import BreadCrumbComponent from "../atoms/BreadCrumbComponent";
 
 const MainSection = () => {
   return (
     <main className="space-y-8">
-      <Breadcrumb>
-        <BreadcrumbList>
-          <BreadcrumbItem>
-            <BreadcrumbLink href="/">Home</BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbLink href="/courses">Courses</BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbPage>Courses Details</BreadcrumbPage>
-          </BreadcrumbItem>
-        </BreadcrumbList>
-      </Breadcrumb>
+      <BreadCrumbComponent items={breadcrumbItems} />
+
+      <h1 className="text-2xl">Starting SEO as your Home Based Business</h1>
+
+      {/* Video player that is sticky on top on the mobile devices, but not on the desktop */}
+      {/* gap */}
+      {/* circlar boxes which contains social icons facebook, twitter, linkedin, youtube... all colored with gray fills */}
     </main>
   );
 };
