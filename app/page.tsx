@@ -5,7 +5,6 @@ import BreadCrumbComponent from "@/components/atoms/BreadCrumbComponent";
 import VideoPlayer from "@/components/molecules/VideoPlayer";
 import SectionalButtons from "@/components/molecules/SectionalButtons";
 import CourseMaterialsSection from "@/components/layout/course-material-section";
-import AskQuestionSection from "@/components/layout/ask-question-section";
 
 const CommentsSections = dynamic(
   () => import("@/components/layout/comments-section")
@@ -29,7 +28,6 @@ export default function Home() {
 
       <AsideSection />
       <CommentsSections />
-      <AskQuestionSection />
     </div>
   );
 }
