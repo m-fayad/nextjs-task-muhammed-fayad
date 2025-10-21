@@ -1,3 +1,4 @@
+import CurriculumList from "../molecules/curriculum-list";
 import Progressbar from "../progress-bar";
 
 const AsideSection = () => {
@@ -9,7 +10,9 @@ const AsideSection = () => {
 
       <Progressbar />
 
-      <section id="curriculum"></section>
+      <section id="curriculum">
+        <CurriculumList />
+      </section>
     </aside>
   );
 };
