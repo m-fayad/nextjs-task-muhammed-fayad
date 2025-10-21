@@ -31,7 +31,7 @@ const CurriculumList = () => {
       ],
       action: () =>
         handleOpenPdf(
-          "https://drive.google.com/file/d/1fxP5qrmVgm8dNeEaW73W8RZXGP5zSVT0/view"
+          "https://drive.google.com/file/d/1fxP5qrmVgm8dNeEaW73W8RZXGP5zSVT0/preview"
         ),
     },
     { id: 4, title: "Course Exercise / Reference Files", isLocked: true },
@@ -56,7 +56,7 @@ const CurriculumList = () => {
       ],
       action: () =>
         handleOpenPdf(
-          "https://drive.google.com/file/d/1fxP5qrmVgm8dNeEaW73W8RZXGP5zSVT0/view"
+          "https://drive.google.com/file/d/1fxP5qrmVgm8dNeEaW73W8RZXGP5zSVT0/preview"
         ),
     },
     { id: 4, title: "Global Variable and Scope", isLocked: true },
