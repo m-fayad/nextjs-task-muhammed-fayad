@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { ChevronLeft, Clock, CheckCircle2 } from "lucide-react";
+import { useState, useMemo, useRef, useEffect } from "react";
+import { ChevronLeft, Clock, CheckCircle2, XCircle } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { motion, Variants } from "framer-motion";
 
 type QuizQuestion = {
   id: number;
@@ -80,6 +81,8 @@ const quizData: QuizQuestion[] = [
 ];
 
 const paginationDots = [1, 2, 3, 4, 5];
+const TOTAL_TIME_SECONDS = 10 * 60;
+const WARNING_TIME_SECONDS = 3 * 60;
 
 type ExamUIProps = {
   onClose: () => void;
@@ -90,7 +93,8 @@ const CompletionScreen: React.FC<ExamUIProps> = ({ onClose }) => (
     <CheckCircle2 className="h-24 w-24 text-green-500" />
     <h2 className="mt-4 text-2xl font-bold">Congratulations!</h2>
     <p className="mt-2 text-center text-muted-foreground">
-      You have successfully passed the exam.
+      You have successfully passed the exam with a{" "}
+      <strong>perfect score of 5/5</strong>!
     </p>
     <Button onClick={onClose} className="mt-8">
       Finish Exam
@@ -98,27 +102,100 @@ const CompletionScreen: React.FC<ExamUIProps> = ({ onClose }) => (
   </div>
 );
 
+const FailureScreen: React.FC<
+  ExamUIProps & { reason: string; correctAnswersCount: number }
+> = ({ onClose, reason, correctAnswersCount }) => (
+  <div className="flex flex-1 flex-col items-center justify-center rounded-t-3xl bg-white p-5 text-gray-900 shadow-xl dark:bg-gray-900 dark:text-gray-100">
+    <XCircle className="h-24 w-24 text-red-500" />
+    <h2 className="mt-4 text-2xl font-bold">Exam Failed</h2>
+    <p className="mt-2 text-center text-lg font-semibold text-gray-700">
+      Your Score:{" "}
+      <strong>
+        {correctAnswersCount}/{quizData.length}
+      </strong>
+    </p>
+    <p className="mt-2 text-center text-muted-foreground">{reason}</p>
+    <Button onClick={onClose} className="mt-8 bg-red-600 hover:bg-red-700">
+      Close
+    </Button>
+  </div>
+);
+
 export const ExamUI: React.FC<ExamUIProps> = ({ onClose }) => {
   const [activeQuestionIndex, setActiveQuestionIndex] = useState(0);
   const [selectedValue, setSelectedValue] = useState<string | null>(null);
-  const [userSelection, setUserSelection] = useState<string | null>(null); // Stores the final answer
   const [quizState, setQuizState] = useState<
     "answering" | "answered_correct" | "answered_wrong" | "completed"
   >("answering");
+  const [timeLeft, setTimeLeft] = useState(TOTAL_TIME_SECONDS);
+  const [isPassed, setIsPassed] = useState(false);
+  const [failReason, setFailReason] = useState("");
+  const [correctAnswersCount, setCorrectAnswersCount] = useState(0); // New state to track score
+  const timerInterval = useRef<NodeJS.Timeout | null>(null);
+
+  const formatTime = (time: number) => {
+    const minutes = Math.floor(time / 60);
+    const seconds = time % 60;
+    return `${minutes.toString().padStart(2, "0")}:${seconds
+      .toString()
+      .padStart(2, "0")}`;
+  };
+
+  const handleTimeOut = () => {
+    setIsPassed(false);
+    setFailReason(
+      "You ran out of time. All questions must be answered correctly to pass."
+    );
+    setQuizState("completed");
+  };
+
+  useEffect(() => {
+    if (quizState !== "completed") {
+      timerInterval.current = setInterval(() => {
+        setTimeLeft((prev) => {
+          if (prev <= 1) {
+            if (timerInterval.current) clearInterval(timerInterval.current);
+            handleTimeOut();
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    } else {
+      if (timerInterval.current) clearInterval(timerInterval.current);
+    }
+
+    return () => {
+      if (timerInterval.current) clearInterval(timerInterval.current);
+    };
+  }, [quizState]);
 
   const currentQuestion = useMemo(
     () => quizData[activeQuestionIndex],
     [activeQuestionIndex]
   );
 
+  const handleCompletionCheck = () => {
+    if (correctAnswersCount === quizData.length) {
+      setIsPassed(true);
+      setQuizState("completed");
+    } else {
+      setIsPassed(false);
+      setFailReason(
+        `You need ${quizData.length}/5 correct answers to pass. Your score is ${correctAnswersCount}/5.`
+      );
+      setQuizState("completed");
+    }
+  };
+
   const handleNextQuestion = () => {
     if (activeQuestionIndex < quizData.length - 1) {
       setActiveQuestionIndex((prev) => prev + 1);
       setQuizState("answering");
       setSelectedValue(null);
-      setUserSelection(null);
     } else {
-      setQuizState("completed");
+      // Reached the end: check total score for pass/fail
+      handleCompletionCheck();
     }
   };
 
@@ -126,20 +203,49 @@ export const ExamUI: React.FC<ExamUIProps> = ({ onClose }) => {
     if (quizState !== "answering") return;
 
     setSelectedValue(option);
-    setUserSelection(option); // Lock in the user's choice
     const isCorrect = option === currentQuestion.correctAnswer;
 
     if (isCorrect) {
+      setCorrectAnswersCount((prev) => prev + 1);
       setQuizState("answered_correct");
-      // Automatically move to next question after 1 second
+
       setTimeout(() => {
         handleNextQuestion();
       }, 1000);
     } else {
-      // Wait for user to click "Next"
       setQuizState("answered_wrong");
     }
   };
+
+  const handleProceedAfterWrongAnswer = () => {
+    if (activeQuestionIndex === quizData.length - 1) {
+      // If wrong on the last question, immediately check overall score and show result
+      handleCompletionCheck();
+    } else {
+      // Otherwise, proceed to the next question
+      setActiveQuestionIndex((prev) => prev + 1);
+      setQuizState("answering");
+      setSelectedValue(null);
+    }
+  };
+
+  const ringVariants: Variants = {
+    initial: {
+      rotate: 0,
+    },
+    ring: {
+      rotate: [-5, 5, -5, 5, 0],
+      transition: {
+        duration: 0.5,
+        repeat: Infinity,
+        repeatType: "reverse",
+        ease: "easeInOut",
+      },
+    },
+  };
+
+  const isWarningTime =
+    timeLeft <= WARNING_TIME_SECONDS && quizState !== "completed";
 
   return (
     <div className="flex h-full w-full flex-col bg-blue-800 p-4 pt-6 text-white dark:bg-blue-900">
@@ -152,10 +258,19 @@ export const ExamUI: React.FC<ExamUIProps> = ({ onClose }) => {
         >
           <ChevronLeft className="h-6 w-6" />
         </Button>
-        <div className="flex items-center gap-2 rounded-full bg-yellow-400 px-4 py-2 text-black shadow-md">
+
+        <motion.div
+          className={cn(
+            "flex items-center gap-2 rounded-full px-4 py-2 shadow-md transition-colors duration-500",
+            isWarningTime ? "bg-red-400 text-white" : "bg-yellow-400 text-black"
+          )}
+          variants={ringVariants}
+          animate={isWarningTime ? "ring" : "initial"}
+        >
           <Clock className="h-5 w-5" />
-          <span className="font-bold">09:32</span>
-        </div>
+          <span className="font-bold">{formatTime(timeLeft)}</span>
+        </motion.div>
+
         <div className="w-10"></div>
       </header>
 
@@ -164,12 +279,12 @@ export const ExamUI: React.FC<ExamUIProps> = ({ onClose }) => {
           <div
             key={num}
             className={cn(
-              "flex h-10 w-10 items-center justify-center rounded-full border border-white/50 bg-transparent font-bold text-white",
+              "flex h-10 w-10 items-center justify-center rounded-full border border-white/50 bg-transparent font-bold text-white transition-colors duration-300",
               num - 1 === activeQuestionIndex
-                ? "border-0 bg-white text-blue-800" // Current
+                ? "border-0 bg-white text-blue-800"
                 : num - 1 < activeQuestionIndex
-                ? "border-blue-300 bg-blue-300/50 text-white" // Answered
-                : "opacity-50" // Upcoming
+                ? "border-blue-300 bg-blue-300/50 text-white"
+                : "opacity-50"
             )}
           >
             {num}
@@ -178,7 +293,15 @@ export const ExamUI: React.FC<ExamUIProps> = ({ onClose }) => {
       </nav>
 
       {quizState === "completed" ? (
-        <CompletionScreen onClose={onClose} />
+        isPassed ? (
+          <CompletionScreen onClose={onClose} />
+        ) : (
+          <FailureScreen
+            onClose={onClose}
+            reason={failReason}
+            correctAnswersCount={correctAnswersCount}
+          />
+        )
       ) : (
         <main className="flex-1 flex-col rounded-t-3xl bg-white p-5 text-gray-900 shadow-xl dark:bg-gray-900 dark:text-gray-100">
           <h2 className="mb-6 text-lg font-semibold">
@@ -198,6 +321,7 @@ export const ExamUI: React.FC<ExamUIProps> = ({ onClose }) => {
               const isWrongSelection =
                 isSelected && quizState === "answered_wrong";
 
+              // Determine visual state
               let stateStyles = "";
               if (quizState === "answered_correct" && isCorrectAnswer) {
                 stateStyles =
@@ -249,8 +373,13 @@ export const ExamUI: React.FC<ExamUIProps> = ({ onClose }) => {
           </RadioGroup>
 
           {quizState === "answered_wrong" && (
-            <Button onClick={handleNextQuestion} className="mt-6 w-full">
-              Next Question
+            <Button
+              onClick={handleProceedAfterWrongAnswer}
+              className="mt-6 w-full"
+            >
+              {activeQuestionIndex === quizData.length - 1
+                ? "Check Final Result"
+                : "Next Question"}
             </Button>
           )}
         </main>
