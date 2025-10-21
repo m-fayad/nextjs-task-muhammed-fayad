@@ -1,3 +1,5 @@
+import Image from "next/image";
+
 const Comment = ({
   avatar,
   username,
@@ -12,7 +14,7 @@ const Comment = ({
   return (
     <div className="flex items-start gap-4 pb-2">
       <div className="shrink-0">
-        <img
+        <Image
           src={avatar}
           alt={username + " avatar"}
           title={username + " avatar"}

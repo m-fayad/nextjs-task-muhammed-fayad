@@ -14,10 +14,10 @@ const TOTAL_TIME_SECONDS = 10 * 60;
 const WARNING_TIME_SECONDS = 3 * 60;
 
 type ExamUIProps = {
-  onClose: () => void;
+  onCloseAction: () => void;
 };
 
-const CompletionScreen: React.FC<ExamUIProps> = ({ onClose }) => (
+const CompletionScreen: React.FC<ExamUIProps> = ({ onCloseAction }) => (
   <div className="flex flex-1 flex-col items-center justify-center rounded-t-3xl bg-white p-5 text-gray-900 shadow-xl dark:bg-gray-900 dark:text-gray-100">
     <CheckCircle2 className="h-24 w-24 text-green-500" />
     <h2 className="mt-4 text-2xl font-bold">Congratulations!</h2>
@@ -25,7 +25,7 @@ const CompletionScreen: React.FC<ExamUIProps> = ({ onClose }) => (
       You have successfully passed the exam with a{" "}
       <strong>perfect score of 5/5</strong>!
     </p>
-    <Button onClick={onClose} className="mt-8">
+    <Button onClick={onCloseAction} className="mt-8">
       Finish Exam
     </Button>
   </div>
@@ -33,7 +33,7 @@ const CompletionScreen: React.FC<ExamUIProps> = ({ onClose }) => (
 
 const FailureScreen: React.FC<
   ExamUIProps & { reason: string; correctAnswersCount: number }
-> = ({ onClose, reason, correctAnswersCount }) => (
+> = ({ onCloseAction, reason, correctAnswersCount }) => (
   <div className="flex flex-1 flex-col items-center justify-center rounded-t-3xl bg-white p-5 text-gray-900 shadow-xl dark:bg-gray-900 dark:text-gray-100">
     <XCircle className="h-24 w-24 text-red-500" />
     <h2 className="mt-4 text-2xl font-bold">Exam Failed</h2>
@@ -44,13 +44,13 @@ const FailureScreen: React.FC<
       </strong>
     </p>
     <p className="mt-2 text-center text-muted-foreground">{reason}</p>
-    <Button onClick={onClose} className="mt-8 bg-red-600 hover:bg-red-700">
+    <Button onClick={onCloseAction} className="mt-8 bg-red-600 hover:bg-red-700">
       Close
     </Button>
   </div>
 );
 
-export const ExamUI: React.FC<ExamUIProps> = ({ onClose }) => {
+export const ExamUI: React.FC<ExamUIProps> = ({ onCloseAction }) => {
   // Initialize state with values from localStorage if available
   const [activeQuestionIndex, setActiveQuestionIndex] = useState(() => {
     const saved = localStorage.getItem("examProgress");
@@ -122,7 +122,7 @@ export const ExamUI: React.FC<ExamUIProps> = ({ onClose }) => {
   // Modify the onClose handler to reset progress
   const handleClose = () => {
     resetProgress();
-    onClose();
+    onCloseAction();
   };
 
   const timerInterval = useRef<NodeJS.Timeout | null>(null);
@@ -288,10 +288,10 @@ export const ExamUI: React.FC<ExamUIProps> = ({ onClose }) => {
 
       {quizState === "completed" ? (
         isPassed ? (
-          <CompletionScreen onClose={handleClose} />
+          <CompletionScreen onCloseAction={handleClose} />
         ) : (
           <FailureScreen
-            onClose={handleClose}
+            onCloseAction={handleClose}
             reason={failReason}
             correctAnswersCount={correctAnswersCount}
           />
