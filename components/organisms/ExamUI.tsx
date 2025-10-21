@@ -7,78 +7,7 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { motion, Variants } from "framer-motion";
-
-type QuizQuestion = {
-  id: number;
-  question: string;
-  options: string[];
-  correctAnswer: string;
-};
-
-const quizData: QuizQuestion[] = [
-  {
-    id: 1,
-    question:
-      "What is the primary benefit of Server-Side Rendering (SSR) in Next.js?",
-    options: [
-      "Faster client-side navigation",
-      "Improved SEO and faster initial page load",
-      "Reduced server load",
-      "Enables real-time database connections",
-    ],
-    correctAnswer: "Improved SEO and faster initial page load",
-  },
-  {
-    id: 2,
-    question:
-      'When designing a scalable frontend, what does "code splitting" refer to?',
-    options: [
-      "Splitting your CSS into multiple files",
-      "Using multiple git branches",
-      "Breaking down the JavaScript bundle into smaller chunks loaded on demand",
-      "Dividing components into 'atoms' and 'molecules'",
-    ],
-    correctAnswer:
-      "Breaking down the JavaScript bundle into smaller chunks loaded on demand",
-  },
-  {
-    id: 3,
-    question:
-      "In Next.js, what is the purpose of the `getStaticProps` function?",
-    options: [
-      "To fetch data at request time for SSR",
-      "To fetch data on the client-side after hydration",
-      "To fetch data at build time for Static Site Generation (SSG)",
-      "To define API routes within the `pages` directory",
-    ],
-    correctAnswer:
-      "To fetch data at build time for Static Site Generation (SSG)",
-  },
-  {
-    id: 4,
-    question: 'What is a "design system" in frontend development?',
-    options: [
-      "A CSS framework like Tailwind or Bootstrap",
-      "A set of reusable components and guidelines to ensure brand consistency",
-      "A specific folder structure for your project",
-      "A tool for creating mockups like Figma or Sketch",
-    ],
-    correctAnswer:
-      "A set of reusable components and guidelines to ensure brand consistency",
-  },
-  {
-    id: 5,
-    question: 'What is "hydration" in the context of SSR?',
-    options: [
-      "The process of fetching data from a database",
-      "Minifying the JavaScript bundle",
-      "The process where client-side JavaScript adds interactivity to the server-rendered HTML",
-      "A security measure to prevent XSS attacks",
-    ],
-    correctAnswer:
-      "The process where client-side JavaScript adds interactivity to the server-rendered HTML",
-  },
-];
+import { quizData } from "@/lib/constants";
 
 const paginationDots = [1, 2, 3, 4, 5];
 const TOTAL_TIME_SECONDS = 10 * 60;
@@ -122,15 +51,80 @@ const FailureScreen: React.FC<
 );
 
 export const ExamUI: React.FC<ExamUIProps> = ({ onClose }) => {
-  const [activeQuestionIndex, setActiveQuestionIndex] = useState(0);
-  const [selectedValue, setSelectedValue] = useState<string | null>(null);
+  // Initialize state with values from localStorage if available
+  const [activeQuestionIndex, setActiveQuestionIndex] = useState(() => {
+    const saved = localStorage.getItem("examProgress");
+    return saved ? JSON.parse(saved).activeQuestionIndex || 0 : 0;
+  });
+  const [selectedValue, setSelectedValue] = useState<string | null>(() => {
+    const saved = localStorage.getItem("examProgress");
+    return saved ? JSON.parse(saved).selectedValue || null : null;
+  });
   const [quizState, setQuizState] = useState<
     "answering" | "answered_correct" | "answered_wrong" | "completed"
-  >("answering");
-  const [timeLeft, setTimeLeft] = useState(TOTAL_TIME_SECONDS);
-  const [isPassed, setIsPassed] = useState(false);
-  const [failReason, setFailReason] = useState("");
-  const [correctAnswersCount, setCorrectAnswersCount] = useState(0); // New state to track score
+  >(() => {
+    const saved = localStorage.getItem("examProgress");
+    return saved ? JSON.parse(saved).quizState || "answering" : "answering";
+  });
+  const [timeLeft, setTimeLeft] = useState(() => {
+    const saved = localStorage.getItem("examProgress");
+    return saved
+      ? JSON.parse(saved).timeLeft || TOTAL_TIME_SECONDS
+      : TOTAL_TIME_SECONDS;
+  });
+  const [isPassed, setIsPassed] = useState(() => {
+    const saved = localStorage.getItem("examProgress");
+    return saved ? JSON.parse(saved).isPassed || false : false;
+  });
+  const [failReason, setFailReason] = useState(() => {
+    const saved = localStorage.getItem("examProgress");
+    return saved ? JSON.parse(saved).failReason || "" : "";
+  });
+  const [correctAnswersCount, setCorrectAnswersCount] = useState(() => {
+    const saved = localStorage.getItem("examProgress");
+    return saved ? JSON.parse(saved).correctAnswersCount || 0 : 0;
+  });
+
+  // Save progress to localStorage whenever relevant state changes
+  useEffect(() => {
+    const progress = {
+      activeQuestionIndex,
+      selectedValue,
+      quizState,
+      timeLeft,
+      isPassed,
+      failReason,
+      correctAnswersCount,
+    };
+    localStorage.setItem("examProgress", JSON.stringify(progress));
+  }, [
+    activeQuestionIndex,
+    selectedValue,
+    quizState,
+    timeLeft,
+    isPassed,
+    failReason,
+    correctAnswersCount,
+  ]);
+
+  // Reset progress when the exam is completed or closed
+  const resetProgress = () => {
+    localStorage.removeItem("examProgress");
+    setActiveQuestionIndex(0);
+    setSelectedValue(null);
+    setQuizState("answering");
+    setTimeLeft(TOTAL_TIME_SECONDS);
+    setIsPassed(false);
+    setFailReason("");
+    setCorrectAnswersCount(0);
+  };
+
+  // Modify the onClose handler to reset progress
+  const handleClose = () => {
+    resetProgress();
+    onClose();
+  };
+
   const timerInterval = useRef<NodeJS.Timeout | null>(null);
 
   const formatTime = (time: number) => {
@@ -152,7 +146,7 @@ export const ExamUI: React.FC<ExamUIProps> = ({ onClose }) => {
   useEffect(() => {
     if (quizState !== "completed") {
       timerInterval.current = setInterval(() => {
-        setTimeLeft((prev) => {
+        setTimeLeft((prev: number) => {
           if (prev <= 1) {
             if (timerInterval.current) clearInterval(timerInterval.current);
             handleTimeOut();
@@ -190,7 +184,7 @@ export const ExamUI: React.FC<ExamUIProps> = ({ onClose }) => {
 
   const handleNextQuestion = () => {
     if (activeQuestionIndex < quizData.length - 1) {
-      setActiveQuestionIndex((prev) => prev + 1);
+      setActiveQuestionIndex((prev: number) => prev + 1);
       setQuizState("answering");
       setSelectedValue(null);
     } else {
@@ -206,7 +200,7 @@ export const ExamUI: React.FC<ExamUIProps> = ({ onClose }) => {
     const isCorrect = option === currentQuestion.correctAnswer;
 
     if (isCorrect) {
-      setCorrectAnswersCount((prev) => prev + 1);
+      setCorrectAnswersCount((prev: number) => prev + 1);
       setQuizState("answered_correct");
 
       setTimeout(() => {
@@ -223,7 +217,7 @@ export const ExamUI: React.FC<ExamUIProps> = ({ onClose }) => {
       handleCompletionCheck();
     } else {
       // Otherwise, proceed to the next question
-      setActiveQuestionIndex((prev) => prev + 1);
+      setActiveQuestionIndex((prev: number) => prev + 1);
       setQuizState("answering");
       setSelectedValue(null);
     }
@@ -254,7 +248,7 @@ export const ExamUI: React.FC<ExamUIProps> = ({ onClose }) => {
           variant="ghost"
           size="icon"
           className="hover:bg-white/10"
-          onClick={onClose}
+          onClick={handleClose}
         >
           <ChevronLeft className="h-6 w-6" />
         </Button>
@@ -294,10 +288,10 @@ export const ExamUI: React.FC<ExamUIProps> = ({ onClose }) => {
 
       {quizState === "completed" ? (
         isPassed ? (
-          <CompletionScreen onClose={onClose} />
+          <CompletionScreen onClose={handleClose} />
         ) : (
           <FailureScreen
-            onClose={onClose}
+            onClose={handleClose}
             reason={failReason}
             correctAnswersCount={correctAnswersCount}
           />
@@ -315,7 +309,7 @@ export const ExamUI: React.FC<ExamUIProps> = ({ onClose }) => {
             disabled={quizState !== "answering"}
             className="space-y-4"
           >
-            {currentQuestion.options.map((option) => {
+            {currentQuestion.options.map((option: string) => {
               const isSelected = selectedValue === option;
               const isCorrectAnswer = currentQuestion.correctAnswer === option;
               const isWrongSelection =
