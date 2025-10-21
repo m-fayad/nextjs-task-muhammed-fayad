@@ -2,10 +2,12 @@
 
 import { useState } from "react";
 import { AskQuestionModal } from "./AskQuestionModal";
+import LeaderboardModal from "./LeaderboardModal";
 import { useCommentsContext } from "@/context/CommentsContext";
 
 const SectionalButtons = () => {
   const [isAskQuestionOpen, setAskQuestionOpen] = useState(false);
+  const [isLeaderboardOpen, setLeaderboardOpen] = useState(false);
   const { addComment } = useCommentsContext();
 
   const handleQuestionSubmit = (text: string) => {
@@ -33,18 +35,23 @@ const SectionalButtons = () => {
         >
           Ask a Question
         </button>
-        <a
-          href="#leaderboard"
-          className="px-3 py-1 rounded-[30px] border font-bold border-[#d5d5d5] text-[#1F2937] hover:bg-primary/10"
+        <button
+          onClick={() => setLeaderboardOpen(true)}
+          className="px-3 py-1 rounded-[30px] border font-bold border-[#d5d5d5] text-[#1F2937] hover:bg-primary/10 text-left"
         >
           Leaderboard
-        </a>
+        </button>
       </div>
 
       <AskQuestionModal
         isOpen={isAskQuestionOpen}
         onClose={() => setAskQuestionOpen(false)}
         onQuestionSubmit={handleQuestionSubmit}
+      />
+
+      <LeaderboardModal
+        isOpen={isLeaderboardOpen}
+        onClose={() => setLeaderboardOpen(false)}
       />
     </>
   );
